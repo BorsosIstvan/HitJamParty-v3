@@ -1,0 +1,320 @@
+/* Globális alapok */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0b0c10;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* A HitJam-Party fő mobil kerete (A profi osztály) */
+.app-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%; 
+  max-width: 450px; 
+  min-height: 92vh; 
+  background: linear-gradient(180deg, #160c1b 0%, #0b0c10 100%); 
+  padding: 25px 20px; 
+  box-sizing: border-box; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: space-between; 
+  box-shadow: 0 0 30px rgba(0,0,0,0.6); 
+  border-radius: 20px; 
+  margin: 20px auto; 
+
+  /* ÖRÖKLŐDÉS: Minden elem, ami a dobozon belülre kerül, 
+     automatikusan középre igazított és dögös narancssárga lesz */
+  text-align: center;
+  color: #ff4500; 
+}
+
+/* HitJam gomb alapstílus */
+.hitjam-btn {
+  /* ÖRÖKLŐDÉS KIHASZNÁLÁSA: */
+  background: transparent;     /* Átlátszó háttér, hogy áttűnjön a konténer színátmenete */
+  color: inherit;              /* Automatikusan örökli az AppContainer tűzpiros/narancs színét! */
+  border: 2px solid currentColor; /* A keret színe is pontosan megegyezik a szöveg színével */
+  
+  /* Formázás és elrendezés */
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;   /* Csupa nagybetűs szöveg */
+  letter-spacing: 1.5px;       /* Kicsit szellősebb betűk a prémium hatásért */
+  border-radius: 30px;         /* Teljesen lekerekített, kapszula alakú sarkok */
+  cursor: pointer;
+  transition: all 0.3s ease;   /* Sima átmenet az animációkhoz */
+  margin: 15px auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;                    /* Távolság az ikon és a szöveg között */
+}
+
+/* Interaktív effektek (Hover/Érintés) */
+.hitjam-btn:hover {
+  background-color: #ff4500;   /* Hoverre feltöltődik a narancs színnel */
+  color: #0b0c10;              /* A szöveg sötét lesz a jó kontraszt miatt */
+  box-shadow: 0 0 15px #ff4500; /* Neonos izzás effekt */
+  transform: scale(1.05);      /* Kicsit megnő, ha fölé viszed az egeret */
+}
+
+/* Aktív kattintás effekt */
+.hitjam-btn:active {
+  transform: scale(0.95);      /* Kattintásra enyhén összemegy (fizikai gomb érzet) */
+}
+
+/* HitJam Űrlap és beviteli mezők stílusai */
+.hitjam-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.hitjam-field {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 5px;
+}
+
+.hitjam-field label {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+
+.hitjam-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 69, 0, 0.3); /* Finom narancs keret */
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 12px;
+  border-radius: 15px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.hitjam-input:focus {
+  border-color: #ff4500; /* Fókusz esetén beizzik a tűzpiros/narancs */
+}
+
+/* Üzenet dobozok */
+.hitjam-alert {
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.hitjam-alert-error {
+  background: rgba(255, 69, 0, 0.1);
+  border: 1px solid #ff4500;
+  color: #ff4500;
+}
+
+.hitjam-alert-success {
+  background: rgba(0, 255, 100, 0.1);
+  border: 1px solid #00ff64;
+  color: #00ff64;
+}
+
+/* Link-szerű gomb az üzemmódváltáshoz */
+.hitjam-link-btn {
+  background: none;
+  border: none;
+  color: inherit; /* Örökli a narancssárgát */
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.8;
+  margin-top: 15px;
+}
+
+.hitjam-link-btn:hover {
+  opacity: 1;
+}
+
+/* HitJam Kijelentkezés Gomb (Vöröses/Vészjósló dizájn a kilépéshez) */
+.hitjam-btn-logout {
+  background: transparent;
+  color: #ff3333; /* Pirosas szövegszín */
+  border: 1px dashed #ff3333; /* Szaggatott piros keret */
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 10px auto 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hitjam-btn-logout:hover {
+  background-color: #ff3333;
+  color: #0b0c10;
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+  transform: scale(1.02);
+}
+
+/* Kvíz gombok elrendezése: 2x2-es rács */
+.quiz-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+/* Egyedi kvíz gomb stílus */
+.quiz-btn {
+  background: rgba(0, 0, 0, 0.5);
+  color: inherit;
+  border: 2px solid rgba(255, 69, 0, 0.4);
+  padding: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quiz-btn:hover:not(:disabled) {
+  border-color: #ff4500;
+  background: rgba(255, 69, 0, 0.1);
+  box-shadow: 0 0 10px rgba(255, 69, 0, 0.3);
+}
+
+/* Ha a gomb le van tiltva (mert már választott a játékos) */
+.quiz-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Kvíz játékmód választó sáv */
+.quiz-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 69, 0, 0.2);
+  border-radius: 25px;
+  padding: 4px;
+  margin: 15px 0;
+}
+
+.quiz-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 8px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+/* Aktív, kiválasztott fül stílusa */
+.quiz-tab-btn.active {
+  background: #ff4500;
+  color: #0b0c10;
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(255, 69, 0, 0.4);
+}
+
+/* HitJam Party Lábléc stílus */
+.hitjam-footer {
+  margin-top: auto;          /* Feltolja a felette lévő elemeket, így mindig a doboz legaljára tapad */
+  padding-top: 20px;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  opacity: 0.4;             /* Finom, diszkrét megjelenés, nem zavarja a játékot */
+  color: inherit;           /* Örökli az AppContainer narancssárga színét */
+  border-top: 1px solid rgba(255, 69, 0, 0.1); /* Nagyon vékony elválasztó vonal */
+  width: 100%;
+}
+
+/* HitJam QR-kód konténer */
+.hitjam-qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 15px auto 5px auto;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed rgba(255, 69, 0, 0.3);
+  border-radius: 15px;
+  width: fit-content;
+  animation: fade-in 0.3s ease;
+}
+
+/* Kisméretű, diszkrét toggle gomb a láblécben */
+.hitjam-footer-toggle {
+  background: transparent;
+  border: 1px solid rgba(255, 69, 0, 0.2);
+  color: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+  margin: 5px auto;
+  text-transform: uppercase;
+}
+
+.hitjam-footer-toggle:hover {
+  opacity: 1;
+  border-color: #ff4500;
+  background: rgba(255, 69, 0, 0.1);
+}
+
+/* HitJam Fő Navigációs Sáv */
+.hitjam-nav {
+  display: flex;
+  background: rgba(0, 0, 0, 0.6);
+  border-top: 1px solid rgba(255, 69, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 69, 0, 0.2);
+  padding: 5px;
+  margin-bottom: 15px;
+  width: 100%;
+  justify-content: space-around;
+}
+
+.hitjam-nav-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.hitjam-nav-btn.active {
+  opacity: 1;
+  color: #ff4500;
+  text-shadow: 0 0 8px rgba(255, 69, 0, 0.6);
+}
