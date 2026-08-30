@@ -22,7 +22,7 @@ function AuthForm({ onAuthSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://${PI_IP_CIM}/HitJamParty/login.php`, {
+      const response = await fetch(`https://${PI_IP_CIM}/HitJamParty/login.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

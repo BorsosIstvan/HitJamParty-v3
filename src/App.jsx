@@ -50,7 +50,7 @@ function App() {
   const mentesASzerverre = async (aktualisPont, aktualisCoin) => {
     if (!user) return;
     try {
-      await fetch(`http://${PI_IP_CIM}/HitJamParty/save_score.php`, {
+      await fetch(`https://${PI_IP_CIM}/HitJamParty/save_score.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: user, score: aktualisPont, coins: aktualisCoin })
