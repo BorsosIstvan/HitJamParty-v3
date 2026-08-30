@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     // 2. Beállítjuk a PWA-t és a Manifestet
     VitePWA({
-      registerType: 'autoUpdate', // Automatikusan frissít a háttérben, ha új kódot deployolsz
+      registerType: 'prompt', // Automatikusan frissít a háttérben, ha új kódot deployolsz
       //includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'], // Statikus fájlok
       manifest: {
         name: 'HitJam Party Kvíz',
