@@ -4,8 +4,8 @@ import SongDisplay from './components/SongDisplay';
 import PlayPauseButton from './PlayPauseButton';
 import RandomizerButton from './RandomizerButton';
 import QuizDisplay from './components/QuizDisplay';
-import HitJamInventory from './components/HitJamInventory'; // Import
-import HitJamStore from './components/HitJamStore';         // Import
+import HitJamInventory from './components/HitJamInventory';
+import HitJamStore from './components/HitJamStore';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import albumData from './albums.json';
@@ -14,7 +14,8 @@ import AuthForm from './components/AuthForm';
 import LogoutButton from './components/LogoutButton';
 import GameFooter from './components/GameFooter';
 
-const osszesDal = albumData.flatMap(album => album.songs);
+// A teljes nyers adatbázis megmarad kívül a végtelen ciklusok elkerülése miatt
+const osszesLetezoDal = albumData.flatMap(album => album.songs);
 
 function App() {
   const PI_IP_CIM = "192.168.132.218";
@@ -24,13 +25,27 @@ function App() {
   const [coins, setCoins] = useState(null);
   const [albums, setAlbums] = useState(null);
 
-  // ÚJ ÁLLAPOTOK A STORE-HOZ ÉS RAKTÁRHOZ:
-  const [nezet, setNezet] = useState('jatek'); // 'jatek', 'raktar', 'bolt'
-  const [aktivAlbumIds, setAktivAlbumIds] = useState(['retro-party']); // Alapértelmezett aktív album
+  const [nezet, setNezet] = useState('jatek'); 
+  
+  // A bepipált albumok ID-it tároló lista (Alapértelmezetten a 'retro-party' aktív)
+  const [aktivAlbumIds, setAktivAlbumIds] = useState(['retro-party']);
 
-  const [aktualisDal, setAktualisDal] = useState(osszesDal[Math.floor(Math.random() * osszesDal.length)]);
+  // 1. LÉPÉS: DINAMIKUS DAL-SZŰRÉS A RAKTÁR ALAPJÁN
+  // Csak azokat az albumokat vesszük figyelembe, amiknek az ID-ja szerepel az aktivAlbumIds tömbben!
+  const jatekbanLevoDalok = albumData
+    .filter(album => aktivAlbumIds.includes(album.id))
+    .flatMap(album => album.songs);
+
+  // Zseniális induló sorsolás a te egyszerűsített módszereddel (biztonsági mentéssel, ha a szűrt lista még üres lenne)
+  const [aktualisDal, setAktualisDal] = useState(() => {
+    const kezdoLista = jatekbanLevoDalok.length > 0 ? jatekbanLevoDalok : osszesLetezoDal;
+    return kezdoLista[Math.floor(Math.random() * kezdoLista.length)];
+  });
+
   const { trackName, artistName, isPlaying, togglePlay } = useAudioEngine(aktualisDal.artist, aktualisDal.title);
-  const { eveket, eloadokat, cimeket, valaszolt, helyesE, ellenorizValasz } = useQuizEngine(aktualisDal, osszesDal);
+  
+  // A kvíz motor is a globális összes létező dalt kapja meg a hamis opciók generálásához, hogy változatosabb legyen!
+  const { eveket, eloadokat, cimeket, valaszolt, helyesE, ellenorizValasz } = useQuizEngine(aktualisDal, osszesLetezoDal);
 
   const mentesASzerverre = async (aktualisPont, aktualisCoin) => {
     if (!user) return;
@@ -50,7 +65,8 @@ function App() {
     setScore(Number(score));
     setCoins(Number(coins));
     setAlbums(ownedAlbums);
-    if (activeAlbumIds) setAktivAlbumIds(activeAlbumIds);
+    // Ha a Pi küldött korábbi mentett aktív albumokat, betöltjük, különben marad az alapértelmezett
+    if (activeAlbumIds && activeAlbumIds.length > 0) setAktivAlbumIds(activeAlbumIds);
   };
 
   const handleLogout = () => { setUser(null); };
@@ -71,23 +87,23 @@ function App() {
     }
   };
 
-  // Funkció az albumok ki-be kapcsolásához a Raktárban
+  // 2. LÉPÉS: A Raktár pipáinak kezelése
   const handleToggleAlbum = (albumId) => {
     if (aktivAlbumIds.includes(albumId)) {
-      if (aktivAlbumIds.length > 1) { // Legalább egy album maradjon aktív
+      // Biztosítjuk, hogy a játékos ne tudja az ÖSSZES albumot kikapcsolni (legalább 1 kell a játékhoz)
+      if (aktivAlbumIds.length > 1) { 
         setAktivAlbumIds(aktivAlbumIds.filter(id => id !== albumId));
       }
     } else {
+      // Ha nem volt aktív, hozzáadjuk a listához
       setAktivAlbumIds([...aktivAlbumIds, albumId]);
     }
   };
 
-  // Funkció a vásárláshoz a Boltban
   const handleVasarlas = async (targyId, ar) => {
     if (coins >= ar) {
       const ujCoin = coins - ar;
       setCoins(ujCoin);
-      // Itt a jövőben hozzáadhatjuk az új albumot a birtokoltakhoz
       await mentesASzerverre(score, ujCoin);
       alert(`🎉 Sikeresen megvásároltad! Elköltöttél ${ar} érmét.`);
     }
@@ -101,14 +117,12 @@ function App() {
         <AuthForm onAuthSuccess={handleSuccesLogin}/>
       ) : (
         <>
-          {/* Felső Játékos Sáv */}
           <div style={{ marginBottom: '10px' }}>
             <p style={{ margin: '3px 0' }}>player: <strong>{user}</strong> | score: <strong>{score}</strong></p>
             <p style={{ margin: '3px 0', fontSize: '14px', opacity: 0.8 }}>coins: 🪙 {coins}</p>
             <LogoutButton onLogout={handleLogout}/>
           </div>
 
-          {/* ALSÓ/KÖZÉPSŐ NAVIGÁCIÓS SÁV - A szép váltáshoz */}
           <nav className="hitjam-nav">
             <button className={`hitjam-nav-btn ${nezet === 'jatek' ? 'active' : ''}`} onClick={() => setNezet('jatek')}>
               🎮 Játék
@@ -121,14 +135,16 @@ function App() {
             </button>
           </nav>
 
-          {/* RENDERELES A VÁLASZTOTT NÉZET ALAPJÁN */}
           {nezet === 'jatek' && (
             <>
-              <GameStats albumokListaja={albumData} />
+              {/* JAVÍTÁS: A statisztikának és a sorsoló gombnak is az AKTUÁLISAN szűrt listát adjuk át! */}
+              <GameStats albumokListaja={albumData.filter(a => aktivAlbumIds.includes(a.id))} />
               <SongDisplay trackName={trackName} artistName={artistName} year={aktualisDal.year} valaszolt={valaszolt} />
               <PlayPauseButton isPlaying={isPlaying} onToggle={togglePlay} />
               <QuizDisplay eveket={eveket} eloadokat={eloadokat} cimeket={cimeket} onValasz={handleQuizAnswer} valaszolt={valaszolt} helyesE={helyesE} />
-              <RandomizerButton dalokListaja={osszesDal} onDalValasztas={setAktualisDal} />
+              
+              {/* A Sorsoló gomb mostantól szigorúan csak a bepipált albumok listáját kapja meg */}
+              <RandomizerButton dalokListaja={jatekbanLevoDalok} onDalValasztas={setAktualisDal} />
             </>
           )}
 
