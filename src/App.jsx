@@ -18,7 +18,7 @@ import GameFooter from './components/GameFooter';
 const osszesLetezoDal = albumData.flatMap(album => album.songs);
 
 function App() {
-  const PI_IP_CIM = "https://api.hitjamparty.com";
+  const PI_IP_CIM = "api.hitjamparty.com";
 
   const [user, setUser] = useState(null);
   const [score, setScore] = useState(null);

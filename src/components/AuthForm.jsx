@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 function AuthForm({ onAuthSuccess }) {
-  const PI_IP_CIM = "https://api.hitjamparty.com"; 
+  const PI_IP_CIM = "api.hitjamparty.com"; 
   
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [username, setUsername] = useState("");
