@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa'; // 1. Importáljuk a PWA plugint
 
 export default defineConfig({
+  base: '/HitJamParty-v3/',
   plugins: [
     react(),
     // 2. Beállítjuk a PWA-t és a Manifestet
