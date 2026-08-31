@@ -17,9 +17,9 @@ function GameFooter() {
         
         {/* 3. Sor: PWA és Elérhetőség link formájában */}
         <p style={{ margin: '4px 0 0 0', fontSize: '10px' }}>
-          Serverless PWA Application • Available at:{' '}
+          Test PWA Application • Available at:{' '}
           <a>
-            borsosistvan.github.io/HitJamParty
+            hitjamparty.com
           </a>
         </p>
 
