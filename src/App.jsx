@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Behozzuk a useEffect-et az automatizmushoz
 import AppContainer from './AppContainer';
 import SongDisplay from './components/SongDisplay';
 import PlayPauseButton from './PlayPauseButton';
@@ -23,12 +23,14 @@ function App() {
   const [user, setUser] = useState(null);
   const [score, setScore] = useState(null);
   const [coins, setCoins] = useState(null);
-  const [albumsList, setAlbumsList] = useState(['retro-party']); // Tömbként tároljuk a birtokoltakat
+  const [albumsList, setAlbumsList] = useState(['retro-party']);
 
   const [nezet, setNezet] = useState('jatek'); 
   const [aktivAlbumIds, setAktivAlbumIds] = useState(['retro-party']);
+  
+  // Extra állapot, hogy mutassuk, ha a háttérben épp az automatikus vendég login fut
+  const [loadingGuest, setLoadingGuest] = useState(true);
 
-  // Szűrés a bepipált albumok alapján
   const jatekbanLevoDalok = albumData
     .filter(album => aktivAlbumIds.includes(album.id))
     .flatMap(album => album.songs);
@@ -37,7 +39,41 @@ function App() {
   const { trackName, artistName, isPlaying, togglePlay } = useAudioEngine(aktualisDal.artist, aktualisDal.title);
   const { eveket, eloadokat, cimeket, valaszolt, helyesE, ellenorizValasz } = useQuizEngine(aktualisDal, osszesLetezoDal);
 
-  // 1. MEGLEVŐ LOGIKÁD: save_score.php hívása játék közben
+  const handleSuccesLogin = (username, score, coins, ownedAlbums, activeAlbumIds) => {
+    setUser(username);
+    setScore(Number(score));
+    setCoins(Number(coins));
+    if (ownedAlbums) setAlbumsList(Array.isArray(ownedAlbums) ? ownedAlbums : ownedAlbums.split(','));
+    if (activeAlbumIds) setAktivAlbumIds(Array.isArray(activeAlbumIds) ? activeAlbumIds : activeAlbumIds.split(','));
+    setLoadingGuest(false);
+  };
+
+  // --- AUTOMATIKUS VENDÉG BELÉPTETÉS INDULÁSKOR ---
+  useEffect(() => {
+    async function autoGuestLogin() {
+      try {
+        // Bekopogunk a Pi-re a fix vendég adatokkal
+        const response = await fetch(`https://${PI_IP_CIM}/HitJamParty/login.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: "vendeg", password: "vendeg123", action: "login" })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          handleSuccesLogin(data.username, data.score, data.coins, data.ownedAlbums, data.activeAlbumIds);
+        } else {
+          setLoadingGuest(false); // Ha hibás a vendég fiók a Pi-n, megállunk és mutatjuk a logint
+        }
+      } catch (err) {
+        console.error("Nem sikerült az automata vendég belépés:", err);
+        setLoadingGuest(false);
+      }
+    }
+
+    autoGuestLogin();
+  }, []);
+
   const mentesASzerverre = async (aktualisPont, aktualisCoin) => {
     if (!user) return;
     try {
@@ -49,17 +85,10 @@ function App() {
     } catch (err) { console.error("Szerver mentési hiba:", err); }
   };
 
-  const handleSuccesLogin = (username, score, coins, ownedAlbums, activeAlbumIds) => {
-    setUser(username);
-    setScore(Number(score));
-    setCoins(Number(coins));
-    
-    // Ha a Pi-től tömbként vagy vesszős stringként jön, itt kezeljük:
-    if (ownedAlbums) setAlbumsList(Array.isArray(ownedAlbums) ? ownedAlbums : ownedAlbums.split(','));
-    if (activeAlbumIds) setAktivAlbumIds(Array.isArray(activeAlbumIds) ? activeAlbumIds : activeAlbumIds.split(','));
+  const handleLogout = () => { 
+    setUser(null); 
+    setNezet('jatek'); 
   };
-
-  const handleLogout = () => { setUser(null); setNezet('jatek'); };
 
   const handleQuizAnswer = async (valasztottTipp, mod) => {
     const sikerult = ellenorizValasz(valasztottTipp);
@@ -77,7 +106,6 @@ function App() {
     }
   };
 
-  // 2. MEGLEVŐ LOGIKÁD: save_store.php 'toggle' ágának hívása
   const handleToggleAlbum = async (albumId) => {
     let ujAktivIds = [];
     if (aktivAlbumIds.includes(albumId)) {
@@ -99,7 +127,6 @@ function App() {
     } catch (err) { console.error("Raktár mentési hiba:", err); }
   };
 
-  // 3. MEGLEVŐ LOGIKÁD: save_store.php 'buy' ágának hívása
   const handleVasarlas = async (albumId, ar) => {
     if (coins >= ar) {
       const ujCoinok = coins - ar;
@@ -113,10 +140,9 @@ function App() {
         
         if (data.success) {
           setCoins(ujCoinok);
-          setAlbumsList([...albumsList, albumId]); // Hozzáadjuk a helyi listához a megvett albumot
-          //alert("🎉 Vásárlás sikeres! Az album bekerült a Raktáradba.");
+          setAlbumsList([...albumsList, albumId]);
         } else {
-          alert(`⚠️ Hiba: ${data.error}`);
+          alert(`⚠️ Hiba a boltban: ${data.error}`);
         }
       } catch (err) { console.error("Vásárlási hiba:", err); }
     }
@@ -124,48 +150,62 @@ function App() {
 
   return (
     <AppContainer>
-      {!user ? (
-        <AuthForm onAuthSuccess={handleSuccesLogin}/>
+      <h2 style={{ margin: '0 0 10px 0' }}>HITJAM PARTY 🎧</h2>
+
+      {/* AMÍG A HÁTTÉRBEN TÖLT A VENDÉG LOGIN */}
+      {loadingGuest && !user ? (
+        <p style={{ color: '#ff4500', fontWeight: 'bold' }}>Party előkészítése... 🕺</p>
       ) : (
+        /* HA KÉSZ A LOGIN ELLENŐRZÉS */
         <>
-          <div style={{ marginBottom: '10px' }}>
-            <p style={{ margin: '3px 0' }}>player: <strong>{user}</strong> | score: <strong>{score}</strong></p>
-            <p style={{ margin: '3px 0', fontSize: '14px', opacity: 0.8 }}>coins: 🪙 {coins}</p>
-            <LogoutButton onLogout={handleLogout}/>
-          </div>
-
-          <nav className="hitjam-nav">
-            <button className={`hitjam-nav-btn ${nezet === 'jatek' ? 'active' : ''}`} onClick={() => setNezet('jatek')}>🎮 Játék</button>
-            <button className={`hitjam-nav-btn ${nezet === 'raktar' ? 'active' : ''}`} onClick={() => setNezet('raktar')}>🎒 Raktár</button>
-            <button className={`hitjam-nav-btn ${nezet === 'bolt' ? 'active' : ''}`} onClick={() => setNezet('bolt')}>🪙 Bolt</button>
-            
-            {user === 'poci' && (
-              <button className={`hitjam-nav-btn ${nezet === 'admin' ? 'active' : ''}`} onClick={() => setNezet('admin')} style={{ color: '#00ff64' }}>
-                👑 Admin
-              </button>
-            )}
-          </nav>
-
-          {nezet === 'jatek' && (
+          {!user ? (
+            /* Ha a vendég login valamiért elbukna, csak akkor mutatjuk az űrlapot */
+            <AuthForm onAuthSuccess={handleSuccesLogin}/>
+          ) : (
             <>
-              <GameStats albumokListaja={albumData.filter(a => aktivAlbumIds.includes(a.id))} />
-              <SongDisplay trackName={trackName} artistName={artistName} year={aktualisDal.year} valaszolt={valaszolt} />
-              <PlayPauseButton isPlaying={isPlaying} onToggle={togglePlay} />
-              <QuizDisplay eveket={eveket} eloadokat={eloadokat} cimeket={cimeket} onValasz={handleQuizAnswer} valaszolt={valaszolt} helyesE={helyesE} />
-              <RandomizerButton dalokListaja={jatekbanLevoDalok} onDalValasztas={setAktualisDal} />
+              {/* Játékos státusz */}
+              <div style={{ marginBottom: '10px' }}>
+                <p style={{ margin: '3px 0' }}>player: <strong>{user}</strong> | score: <strong>{score}</strong></p>
+                <p style={{ margin: '3px 0', fontSize: '14px', opacity: 0.8 }}>coins: 🪙 {coins}</p>
+                
+                {/* A Kilépés gomb mostantól tökéletes "Bejelentkezés" gombként is funkcionál a vendégnek! */}
+                <LogoutButton onLogout={handleLogout} />
+              </div>
+
+              <nav className="hitjam-nav">
+                <button className={`hitjam-nav-btn ${nezet === 'jatek' ? 'active' : ''}`} onClick={() => setNezet('jatek')}>🎮 Játék</button>
+                <button className={`hitjam-nav-btn ${nezet === 'raktar' ? 'active' : ''}`} onClick={() => setNezet('raktar')}>🎒 Raktár</button>
+                <button className={`hitjam-nav-btn ${nezet === 'bolt' ? 'active' : ''}`} onClick={() => setNezet('bolt')}>🪙 Bolt</button>
+                
+                {user === 'poci' && (
+                  <button className={`hitjam-nav-btn ${nezet === 'admin' ? 'active' : ''}`} onClick={() => setNezet('admin')} style={{ color: '#00ff64' }}>
+                    👑 Admin
+                  </button>
+                )}
+              </nav>
+
+              {nezet === 'jatek' && (
+                <>
+                  <GameStats albumokListaja={albumData.filter(a => aktivAlbumIds.includes(a.id))} />
+                  <SongDisplay trackName={trackName} artistName={artistName} year={aktualisDal.year} valaszolt={valaszolt} />
+                  <PlayPauseButton isPlaying={isPlaying} onToggle={togglePlay} />
+                  <QuizDisplay eveket={eveket} eloadokat={eloadokat} cimeket={cimeket} onValasz={handleQuizAnswer} valaszolt={valaszolt} helyesE={helyesE} />
+                  <RandomizerButton dalokListaja={jatekbanLevoDalok} onDalValasztas={setAktualisDal} />
+                </>
+              )}
+
+              {nezet === 'raktar' && (
+                <HitJamInventory albumok={albumData} ownedAlbumsList={albumsList} aktivAlbumIds={aktivAlbumIds} onToggleAlbum={handleToggleAlbum} />
+              )}
+
+              {nezet === 'bolt' && (
+                <HitJamStore albumok={albumData} ownedAlbumsList={albumsList} coins={coins} onVasarlas={handleVasarlas} />
+              )}
+
+              {nezet === 'admin' && user === 'poci' && (
+                <HitJamAdmin apiUrl={`https://${PI_IP_CIM}/HitJamParty/admin.php`} />
+              )}
             </>
-          )}
-
-          {nezet === 'raktar' && (
-            <HitJamInventory albumok={albumData} ownedAlbumsList={albumsList} aktivAlbumIds={aktivAlbumIds} onToggleAlbum={handleToggleAlbum} />
-          )}
-
-          {nezet === 'bolt' && (
-            <HitJamStore albumok={albumData} ownedAlbumsList={albumsList} coins={coins} onVasarlas={handleVasarlas} />
-          )}
-
-          {nezet === 'admin' && user === 'poci' && (
-            <HitJamAdmin apiUrl={`https://${PI_IP_CIM}/HitJamParty/admin.php`} />
           )}
         </>
       )}
