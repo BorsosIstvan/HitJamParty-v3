@@ -69,6 +69,15 @@ function App() {
 
   // --- AUTOMATIKUS VENDÉG BELÉPTETÉS INDULÁSKOR ---
   useEffect(() => {
+    // ÚJ: Megnézzük, van-e már elmentett felhasználó a helyi tárolóban
+    const mentettUser = localStorage.getItem('hitjam_user');
+    
+    // HA MÁR VAN MENTETT USER: Nem csinálunk semmit, nem engedjük a vendéget felülírni!
+    if (mentettUser) {
+      setLoadingGuest(false);
+      return; 
+    }
+
     async function autoGuestLogin() {
       try {
         // Bekopogunk a Pi-re a fix vendég adatokkal
@@ -82,7 +91,7 @@ function App() {
         if (data.success) {
           handleSuccesLogin(data.username, data.score, data.coins, data.ownedAlbums, data.activeAlbumIds);
         } else {
-          setLoadingGuest(false); // Ha hibás a vendég fiók a Pi-n, megállunk és mutatjuk a logint
+          setLoadingGuest(false); 
         }
       } catch (err) {
         console.error("Nem sikerült az automata vendég belépés:", err);
@@ -91,7 +100,8 @@ function App() {
     }
 
     autoGuestLogin();
-  }, []);
+  }, []); // Ez a tömb üres marad, így csak egyszer fut le az oldal betöltésekor
+
 
   // 1. AUTOMATIKUS MENTÉS: Ha változik a pakli tartalma, azonnal elmentjük
   useEffect(() => {
