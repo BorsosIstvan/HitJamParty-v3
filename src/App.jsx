@@ -159,9 +159,17 @@ function App() {
     }
   }, [user]);
 
-  // 3. ALBUM VÁLTOZÁS: Ha a Raktárban megváltoztatják az aktív albumokat, 
-  // ürítjük a paklit a helyi tárolóból is, hogy tiszta lappal induljon a sorsolás
+  // 3. ALBUM VÁLTOZÁS: Csak akkor ürítjük a paklit, ha a játékos ténylegesen megváltoztatja a raktárban az albumokat
   useEffect(() => {
+    // Megnézzük, hogy van-e már valami a localStorage-ban
+    const mentettPakli = localStorage.getItem('hitjam_pakli');
+    
+    // Ha a mentett pakli hossza megegyezik a jelenlegi állapottal, akkor ez az első betöltés, 
+    // ilyenkor NEM szabad törölni. Csak akkor törlünk, ha valódi váltás történt a Raktárban.
+    if (mentettPakli && JSON.parse(mentettPakli).length === pakli.length) {
+      return;
+    }
+
     setPakli([]);
     localStorage.removeItem('hitjam_pakli');
   }, [aktivAlbumIds]);
