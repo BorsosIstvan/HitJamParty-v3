@@ -20,29 +20,39 @@ const osszesLetezoDal = albumData.flatMap(album => album.songs);
 function App() {
   const PI_IP_CIM = "api.hitjamparty.com";
 
-  const [user, setUser] = useState(null);
+  // --- INTELLIGENS LOCALSTORAGE ÁLLAPOTOK ---
+
+  // Megnézzük, van-e elmentett felhasználó, ha nincs, alapértelmezetten null
+  const [user, setUser] = useState(() => {
+    return localStorage.getItem('hitjam_user') || null;
+  });
+
   const [score, setScore] = useState(null);
   const [coins, setCoins] = useState(null);
   const [albumsList, setAlbumsList] = useState(['retro-party']);
 
-  const [nezet, setNezet] = useState('jatek');
+  const [nezet, setNezet] = useState('jatek'); 
   const [aktivAlbumIds, setAktivAlbumIds] = useState(['retro-party']);
-  const [pakli, setPakli] = useState([]);
 
-  // Figyeljük, ha a játékos megváltoztatja az aktív albumokat, ürítjük a paklit, hogy a következő sorsolásnál frissüljön
-  useEffect(() => {
-    setPakli([]);
-  }, [aktivAlbumIds]);
+  // Megnézzük, van-e elmentett félbehagyott pakli a helyi tárolóban
+  const [pakli, setPakli] = useState(() => {
+    const mentettPakli = localStorage.getItem('hitjam_pakli');
+    return mentettPakli ? JSON.parse(mentettPakli) : [];
+  });
 
-  
   // Extra állapot, hogy mutassuk, ha a háttérben épp az automatikus vendég login fut
-  const [loadingGuest, setLoadingGuest] = useState(true);
+  // HA már van elmentett user, akkor nem kell mutatni a loadingot az automata login alatt
+  const [loadingGuest, setLoadingGuest] = useState(() => {
+    const mentettUser = localStorage.getItem('hitjam_user');
+    return !mentettUser; 
+  });
 
   const jatekbanLevoDalok = albumData
     .filter(album => aktivAlbumIds.includes(album.id))
     .flatMap(album => album.songs);
 
   const [aktualisDal, setAktualisDal] = useState(osszesLetezoDal[Math.floor(Math.random() * osszesLetezoDal.length)]);
+
   const { trackName, artistName, isPlaying, togglePlay } = useAudioEngine(aktualisDal.artist, aktualisDal.title);
   const { eveket, eloadokat, cimeket, valaszolt, helyesE, ellenorizValasz } = useQuizEngine(aktualisDal, osszesLetezoDal);
 
@@ -53,6 +63,8 @@ function App() {
     if (ownedAlbums) setAlbumsList(Array.isArray(ownedAlbums) ? ownedAlbums : ownedAlbums.split(','));
     if (activeAlbumIds) setAktivAlbumIds(Array.isArray(activeAlbumIds) ? activeAlbumIds : activeAlbumIds.split(','));
     setLoadingGuest(false);
+    // ÚJ: Elmentjük a sikeresen bejelentkezett usert helyileg is
+    localStorage.setItem('hitjam_user', username);
   };
 
   // --- AUTOMATIKUS VENDÉG BELÉPTETÉS INDULÁSKOR ---
@@ -81,6 +93,28 @@ function App() {
     autoGuestLogin();
   }, []);
 
+  // 1. AUTOMATIKUS MENTÉS: Ha változik a pakli tartalma, azonnal elmentjük
+  useEffect(() => {
+    localStorage.setItem('hitjam_pakli', JSON.stringify(pakli));
+  }, [pakli]);
+
+  // 2. AUTOMATIKUS MENTÉS: Ha változik a bejelentkezett felhasználó, megjegyezzük
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('hitjam_user', user);
+    } else {
+      localStorage.removeItem('hitjam_user');
+    }
+  }, [user]);
+
+  // 3. ALBUM VÁLTOZÁS: Ha a Raktárban megváltoztatják az aktív albumokat, 
+  // ürítjük a paklit a helyi tárolóból is, hogy tiszta lappal induljon a sorsolás
+  useEffect(() => {
+    setPakli([]);
+    localStorage.removeItem('hitjam_pakli');
+  }, [aktivAlbumIds]);
+
+
   const mentesASzerverre = async (aktualisPont, aktualisCoin) => {
     if (!user) return;
     try {
@@ -95,7 +129,14 @@ function App() {
   const handleLogout = () => { 
     setUser(null); 
     setNezet('jatek'); 
+    
+    // ÚJ: Kijelentkezéskor teljesen kitakarítjuk a localStorage-ot,
+    // hogy a következő bejelentkező ne lássa az előző játékos adatait és pakliját
+    localStorage.removeItem('hitjam_user');
+    localStorage.removeItem('hitjam_pakli');
+    setPakli([]); 
   };
+
 
   const handleQuizAnswer = async (valasztottTipp, mod) => {
     const sikerult = ellenorizValasz(valasztottTipp);
