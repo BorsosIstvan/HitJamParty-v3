@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 // Segédfüggvény a tömb tökéletes megkeveréséhez (Fisher-Yates algoritmus)
 const shuffleArray = (tomb) => {
@@ -10,34 +10,28 @@ const shuffleArray = (tomb) => {
   return ujTomb;
 };
 
-function RandomizerButton({ dalokListaja, onDalValasztas }) {
-  // Ebben a state-ben tároljuk a még ki nem sorsolt, már megkevert dalokat
-  const [pakli, setPakli] = useState([]);
-
+function RandomizerButton({ dalokListaja, onDalValasztas, pakli, setPakli }) {
+  
   const sorsolUjDalt = () => {
     if (!dalokListaja || dalokListaja.length === 0) return;
     
-    // Másolatot készítünk a jelenlegi le nem játszott dalokról
     let aktualisPakli = [...pakli];
 
-    // HA ÜRES A PAKLI (vagy ez az első sorsolás): Újrakeverjük az ÖSSZES dalt
+    // HA ÜRES A PAKLI: Újrakeverjük a játékban lévő dalokat
     if (aktualisPakli.length === 0) {
       aktualisPakli = shuffleArray(dalokListaja);
-      console.log("A dalok elfogytak vagy ez az első kör. A teljes pakli újra lett keverve!");
+      console.log("Új játékkör indult, a pakli frissen megkeverve!");
     }
     
-    // HÚZÁS: Kiemeljük a legelső dalt a megkevert pakliból (és töröljük a tömbből)
+    // HÚZÁS: Kiemeljük a legelső dalt
     const kivalasztott = aktualisPakli.shift();
     
-    // Elmentjük a maradék paklit a state-be
+    // Elmentjük a maradék paklit
     setPakli(aktualisPakli);
     
-    // Beküldjük a kisorsolt dalt az App.jsx főállapotába
+    // Beállítjuk az aktuális dalt az App.jsx-ben
     onDalValasztas(kivalasztott);
   };
-
-  // Opcionális: Kiírathatjuk a gombra vagy egy kis szövegbe, hogy hány dal van még hátra
-  const hatralevoDalokSzama = pakli.length === 0 ? dalokListaja.length : pakli.length;
 
   return (
     <button 
@@ -46,7 +40,7 @@ function RandomizerButton({ dalokListaja, onDalValasztas }) {
       style={{ borderColor: '#ff8c00', color: '#ff8c00' }}
     >
       <span>🎲</span>
-      <span>Következő dal sorsolása ({hatralevoDalokSzama} maradt)</span>
+      <span>Következő dal sorsolása</span>
     </button>
   );
 }

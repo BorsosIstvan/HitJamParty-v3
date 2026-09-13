@@ -25,8 +25,15 @@ function App() {
   const [coins, setCoins] = useState(null);
   const [albumsList, setAlbumsList] = useState(['retro-party']);
 
-  const [nezet, setNezet] = useState('jatek'); 
+  const [nezet, setNezet] = useState('jatek');
   const [aktivAlbumIds, setAktivAlbumIds] = useState(['retro-party']);
+  const [pakli, setPakli] = useState([]);
+
+  // Figyeljük, ha a játékos megváltoztatja az aktív albumokat, ürítjük a paklit, hogy a következő sorsolásnál frissüljön
+  useEffect(() => {
+    setPakli([]);
+  }, [aktivAlbumIds]);
+
   
   // Extra állapot, hogy mutassuk, ha a háttérben épp az automatikus vendég login fut
   const [loadingGuest, setLoadingGuest] = useState(true);
@@ -186,11 +193,11 @@ function App() {
 
               {nezet === 'jatek' && (
                 <>
-                  <GameStats albumokListaja={albumData.filter(a => aktivAlbumIds.includes(a.id))} />
+                  <GameStats albumokListaja={albumData.filter(a => aktivAlbumIds.includes(a.id))} pakli={pakli} />
                   <SongDisplay trackName={trackName} artistName={artistName} year={aktualisDal.year} valaszolt={valaszolt} />
                   <PlayPauseButton isPlaying={isPlaying} onToggle={togglePlay} />
                   <QuizDisplay eveket={eveket} eloadokat={eloadokat} cimeket={cimeket} onValasz={handleQuizAnswer} valaszolt={valaszolt} helyesE={helyesE} />
-                  <RandomizerButton dalokListaja={jatekbanLevoDalok} onDalValasztas={setAktualisDal} />
+                  <RandomizerButton dalokListaja={jatekbanLevoDalok} onDalValasztas={setAktualisDal} pakli={pakli} setPakli={setPakli} />
                 </>
               )}
 

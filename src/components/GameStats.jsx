@@ -1,13 +1,15 @@
 import React from 'react';
 
-function GameStats({ albumokListaja }) {
-  // 1. Az albumok száma egyszerűen a tömb hossza
+function GameStats({ albumokListaja, pakli }) {
   const albumokSzama = albumokListaja.length;
 
-  // 2. Összeszámoljuk az összes dalt az összes albumból (redukálással)
   const osszesDalSzama = albumokListaja.reduce((osszeg, album) => {
     return osszeg + (album.songs ? album.songs.length : 0);
   }, 0);
+
+  // Kiszámoljuk a hátralévő és a már lejátszott dalok számát
+  const hatralevoDalok = pakli.length === 0 ? osszesDalSzama : pakli.length;
+  const aktualisDalSorszama = osszesDalSzama - hatralevoDalok;
 
   return (
     <div style={{ 
@@ -19,7 +21,15 @@ function GameStats({ albumokListaja }) {
       opacity: 0.8
     }}>
       <p style={{ margin: '5px 0' }}>🎴 Elérhető albumok: <strong>{albumokSzama}</strong></p>
-      <p style={{ margin: '5px 0' }}>🎵 Összes játékban lévő dal: <strong>{osszesDalSzama}</strong></p>
+      <p style={{ margin: '5px 0' }}>🎵 Játékban lévő dalok: <strong>{osszesDalSzama}</strong></p>
+      
+      {/* ÚJ STATISZTIKAI KIJELZÉSEK */}
+      <p style={{ margin: '5px 0', color: '#ff8c00' }}>
+        📊 Sorsolási folyamat: <strong>{aktualisDalSorszama} / {osszesDalSzama}</strong> dal lejátszva
+      </p>
+      <p style={{ margin: '5px 0', color: '#ffa500' }}>
+        🃏 Még a pakliban maradt: <strong>{hatralevoDalok}</strong> dal
+      </p>
     </div>
   );
 }
