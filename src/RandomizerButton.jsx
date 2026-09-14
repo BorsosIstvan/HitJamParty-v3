@@ -17,21 +17,28 @@ function RandomizerButton({ dalokListaja, onDalValasztas, pakli, setPakli }) {
     
     let aktualisPakli = [...pakli];
 
-    // HA ÜRES A PAKLI: Újrakeverjük a játékban lévő dalokat
+    // HA ELFOGYOTT: vagy ha üres, azonnal újratöltjük az összes elérhető dalból
     if (aktualisPakli.length === 0) {
       aktualisPakli = shuffleArray(dalokListaja);
-      console.log("Új játékkör indult, a pakli frissen megkeverve!");
     }
     
-    // HÚZÁS: Kiemeljük a legelső dalt
+    // Kivesszük az első dalt
     const kivalasztott = aktualisPakli.shift();
     
-    // Elmentjük a maradék paklit
-    setPakli(aktualisPakli);
+    // Biztonsági mentés: ha valamiért mégis üres maradt a pakli (mert pl. csak 1 dal van az albumban),
+    // akkor ne engedjük beragadni, hanem a következő körre készítsük elő a teljes listát
+    if (aktualisPakli.length === 0) {
+      setPakli([]);
+      localStorage.removeItem('hitjam_pakli');
+    } else {
+      setPakli(aktualisPakli);
+    }
     
-    // Beállítjuk az aktuális dalt az App.jsx-ben
-    onDalValasztas(kivalasztott);
+    if (kivalasztott) {
+      onDalValasztas(kivalasztott);
+    }
   };
+
 
   return (
     <button 

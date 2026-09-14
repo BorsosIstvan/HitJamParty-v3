@@ -16,6 +16,7 @@ import LogoutButton from './components/LogoutButton';
 import GameFooter from './components/GameFooter';
 
 const osszesLetezoDal = albumData.flatMap(album => album.songs);
+let isInitialMount = true;
 
 function App() {
   const PI_IP_CIM = "api.hitjamparty.com";
@@ -130,7 +131,13 @@ function App() {
     autoGuestLogin();
   }, []); // Ez a tömb üres marad, így csak egyszer fut le az oldal betöltésekor
 
-
+  // --- Az App() függvényen belül pedig a useeffect így nézzen ki: ---
+  useEffect(() => {
+    // Ha ez a legelső betöltés, csak átugorjuk, nem bántjuk a mentett paklit!
+    if (isInitialMount) {
+      isInitialMount = false;
+      return;
+    }
   // 1. AUTOMATIKUS MENTÉS: Ha változik a pakli tartalma, azonnal elmentjük
   // Ha a pakli változik, mentjük
   useEffect(() => {
