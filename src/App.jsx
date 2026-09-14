@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // Behozzuk a useEffect-et az automatizmushoz
+import React, { useState, useEffect, useRef } from 'react'; // Behozzuk a useRef-et is
 import AppContainer from './AppContainer';
 import SongDisplay from './components/SongDisplay';
 import PlayPauseButton from './PlayPauseButton';
@@ -16,12 +16,10 @@ import LogoutButton from './components/LogoutButton';
 import GameFooter from './components/GameFooter';
 
 const osszesLetezoDal = albumData.flatMap(album => album.songs);
-let isInitialMount = true;
 
 function App() {
   const PI_IP_CIM = "api.hitjamparty.com";
 
-  // --- INTELLIGENS LOCALSTORAGE ÁLLAPOTOK ---
   // --- OKOS LOCALSTORAGE KEZDETI ÁLLAPOTOK ---
 
   // 1. Felhasználó beolvasása
@@ -29,13 +27,13 @@ function App() {
     return localStorage.getItem('hitjam_user') || null;
   });
 
-  // 2. Pontszám beolvasása (ha nincs, 0)
+  // 2. Pontszám beolvasása
   const [score, setScore] = useState(() => {
     const mentettPont = localStorage.getItem('hitjam_score');
     return mentettPont ? Number(mentettPont) : null;
   });
 
-  // 3. Coinok beolvasása (ha nincs, 0)
+  // 3. Coinok beolvasása
   const [coins, setCoins] = useState(() => {
     const mentettCoin = localStorage.getItem('hitjam_coins');
     return mentettCoin ? Number(mentettCoin) : null;
@@ -66,6 +64,8 @@ function App() {
     return !localStorage.getItem('hitjam_user');
   });
 
+  // Ez a React-szabványos jelző mutatja meg, hogy az oldal legelső betöltése fut-e éppen
+  const isInitialMount = useRef(true);
 
   const jatekbanLevoDalok = albumData
     .filter(album => aktivAlbumIds.includes(album.id))
@@ -95,13 +95,9 @@ function App() {
     localStorage.setItem('hitjam_aktivAlbumIds', JSON.stringify(tisztaActive));
   };
 
-
   // --- AUTOMATIKUS VENDÉG BELÉPTETÉS INDULÁSKOR ---
   useEffect(() => {
-    // ÚJ: Megnézzük, van-e már elmentett felhasználó a helyi tárolóban
     const mentettUser = localStorage.getItem('hitjam_user');
-    
-    // HA MÁR VAN MENTETT USER: Nem csinálunk semmit, nem engedjük a vendéget felülírni!
     if (mentettUser) {
       setLoadingGuest(false);
       return; 
@@ -109,7 +105,6 @@ function App() {
 
     async function autoGuestLogin() {
       try {
-        // Bekopogunk a Pi-re a fix vendég adatokkal
         const response = await fetch(`https://${PI_IP_CIM}/HitJamParty/login.php`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -129,35 +124,28 @@ function App() {
     }
 
     autoGuestLogin();
-  }, []); // Ez a tömb üres marad, így csak egyszer fut le az oldal betöltésekor
+  }, []);
 
-  // --- Az App() függvényen belül pedig a useeffect így nézzen ki: ---
-  useEffect(() => {
-    // Ha ez a legelső betöltés, csak átugorjuk, nem bántjuk a mentett paklit!
-    if (isInitialMount) {
-      isInitialMount = false;
-      return;
-    }
-  // 1. AUTOMATIKUS MENTÉS: Ha változik a pakli tartalma, azonnal elmentjük
-  // Ha a pakli változik, mentjük
+  // --- AUTOMATIKUS LOCALSTORAGE MENTÉSEK MŰKÖDÉS KÖZBEN ---
+
+  // Mentés: Ha a pakli változik
   useEffect(() => {
     localStorage.setItem('hitjam_pakli', JSON.stringify(pakli));
   }, [pakli]);
 
-  // Ha a pontszám vagy coin változik, mentjük
+  // Mentés: Ha a pontszám vagy coin változik
   useEffect(() => {
     if (score !== null) localStorage.setItem('hitjam_score', score.toString());
     if (coins !== null) localStorage.setItem('hitjam_coins', coins.toString());
   }, [score, coins]);
 
-  // Ha az albumlisták változnak, mentjük őket tömbként
+  // Mentés: Ha a birtokolt vagy aktív albumok listája változik
   useEffect(() => {
     localStorage.setItem('hitjam_albumsList', JSON.stringify(albumsList));
     localStorage.setItem('hitjam_aktivAlbumIds', JSON.stringify(aktivAlbumIds));
   }, [albumsList, aktivAlbumIds]);
 
-
-  // 2. AUTOMATIKUS MENTÉS: Ha változik a bejelentkezett felhasználó, megjegyezzük
+  // Mentés: Ha változik a bejelentkezett felhasználó
   useEffect(() => {
     if (user) {
       localStorage.setItem('hitjam_user', user);
@@ -166,21 +154,15 @@ function App() {
     }
   }, [user]);
 
-  // 3. ALBUM VÁLTOZÁS: Csak akkor ürítjük a paklit, ha a játékos ténylegesen megváltoztatja a raktárban az albumokat
+  // ALBUM VÁLTOZÁS FIGYELŐ: Csak akkor ürítünk, ha valódi változtatás történt a Raktárban
   useEffect(() => {
-    // Megnézzük, hogy van-e már valami a localStorage-ban
-    const mentettPakli = localStorage.getItem('hitjam_pakli');
-    
-    // Ha a mentett pakli hossza megegyezik a jelenlegi állapottal, akkor ez az első betöltés, 
-    // ilyenkor NEM szabad törölni. Csak akkor törlünk, ha valódi váltás történt a Raktárban.
-    if (mentettPakli && JSON.parse(mentettPakli).length === pakli.length) {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
       return;
     }
-
     setPakli([]);
     localStorage.removeItem('hitjam_pakli');
   }, [aktivAlbumIds]);
-
 
   const mentesASzerverre = async (aktualisPont, aktualisCoin) => {
     if (!user) return;
@@ -201,10 +183,9 @@ function App() {
     setAktivAlbumIds(['retro-party']);
     setPakli([]);
     setNezet('jatek'); 
-    
-    // Teljes takarítás
     localStorage.clear(); 
   };
+
 
 
   const handleQuizAnswer = async (valasztottTipp, mod) => {
